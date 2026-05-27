@@ -12,7 +12,7 @@ from flight_deal_finder.alerts.channels import (
     ObsidianChannel,
     TelegramChannel,
 )
-from flight_deal_finder.api.amadeus import AmadeusClient
+from flight_deal_finder.api.flightapi import FlightApiClient
 from flight_deal_finder.config import load_config
 from flight_deal_finder.db import get_median_price, insert_price, record_alert, was_alerted_recently
 
@@ -26,9 +26,8 @@ class DealEngine:
         self.secrets: dict[str, Any] = self.config["_secrets"]
 
         # Build API clients
-        self.amadeus = AmadeusClient(
-            self.secrets["amadeus_api_key"] or "",
-            self.secrets["amadeus_api_secret"] or "",
+        self.flightapi = FlightApiClient(
+            self.secrets["flightapi_api_key"] or "",
         )
 
         # Build alert channels
@@ -64,9 +63,9 @@ class DealEngine:
         alert_cfg: dict[str, Any] = self.config.get("alerts", {})
         deal_threshold_pct: float = float(alert_cfg.get("deal_threshold_pct", 25))
         cooldown_hours: int = int(alert_cfg.get("cooldown_hours", 168))
-        enabled_providers: list[str] = self.config.get("providers", ["amadeus"])
+        enabled_providers: list[str] = self.config.get("providers", ["flightapi"])
 
-        if "amadeus" not in enabled_providers:
+        if "flightapi" not in enabled_providers:
             logger.warning("No API providers configured. Nothing to do.")
             return
 
@@ -85,7 +84,7 @@ class DealEngine:
             logger.info("Checking %s (%s→%s)", route_name, origin, destination)
 
             # Search across date window
-            offers = self.amadeus.search_window(
+            offers = self.flightapi.search_window(
                 origin, destination, date_from, date_to, min_stay, max_stay, max_price
             )
 

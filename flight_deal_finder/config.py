@@ -25,8 +25,7 @@ def load_config(path: str | Path | None = None) -> dict:
 
     # Inject secrets from env
     config["_secrets"] = {
-        "amadeus_api_key": os.getenv("AMADEUS_API_KEY"),
-        "amadeus_api_secret": os.getenv("AMADEUS_API_SECRET"),
+        "flightapi_api_key": os.getenv("FLIGHTAPI_API_KEY"),
         "telegram_bot_token": os.getenv("TELEGRAM_BOT_TOKEN"),
         "telegram_chat_id": os.getenv("TELEGRAM_CHAT_ID"),
         "smtp_host": os.getenv("SMTP_HOST", "smtp.gmail.com"),

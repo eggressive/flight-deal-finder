@@ -55,5 +55,4 @@ alerts:
 
 # ── API providers (ordered — first non-error result wins) ──────────
 providers:
-  - amadeus
-  # - google_flights  # scraper (activate after Amadeus shutdown)
+  - flightapi

@@ -2,6 +2,9 @@
 
 Personalized flight deal alerts. Set routes + max prices → get notified when prices drop.
 
+**Now using [FlightAPI.io](https://flightapi.io)** — simple API-key auth (no OAuth, no enterprise gate).
+Amadeus Self-Service is closed to new registrations as of June 2026.
+
 ## Quick Start
 
 ```bash
@@ -9,36 +12,48 @@ Personalized flight deal alerts. Set routes + max prices → get notified when p
 python -m venv venv && source venv/bin/activate
 pip install -e ".[dev]"
 
-# 2. Configure
-cp .env.example .env
-# Fill in your Amadeus API key/secret from https://developers.amadeus.com
+# 2. Get an API key
+# → https://flightapi.io  (20 free calls, then Lite from $49/mo)
 
-# 3. Edit your watchlist
+# 3. Configure
+cp .env.example .env
+# Fill in FLIGHTAPI_API_KEY from your FlightAPI dashboard
+
+# 4. Edit your watchlist
 vim watchlist.yaml
 
-# 4. One-shot check
+# 5. One-shot check
 flight-deals check
 
-# 5. Dry-run (no alerts sent, just see what would fire)
+# 6. Dry-run (no alerts sent, just see what would fire)
 flight-deals check --dry-run
 
-# 6. View history
+# 7. View history
 flight-deals history
 ```
 
 ## Architecture
 
 ```
-watchlist.yaml  ──→  DealEngine  ──→  API Clients (Amadeus)
+watchlist.yaml  ──→  DealEngine  ──→  FlightAPI.io (oneway + roundtrip)
                           │
                           ├── price history (SQLite)
                           ├── deal scoring (median-based)
                           └── alert channels (console, email, Telegram, Obsidian)
 ```
 
-## Alert Channels
+## API Provider
 
-Enable channels in `watchlist.yaml` → `alerts.channels`:
+| Feature | FlightAPI.io |
+|---------|-------------|
+| Auth | API key in URL (no OAuth) |
+| Free tier | 20 calls |
+| Pricing | Lite $49/mo, Standard $99/mo |
+| Coverage | 700+ airlines |
+| Endpoints | Oneway, roundtrip, multi-city, tracking, schedules |
+| Credits | 2 per flight search |
+
+## Alert Channels
 
 | Channel | Config |
 |---------|--------|
@@ -53,21 +68,3 @@ Enable channels in `watchlist.yaml` → `alerts.channels`:
 # Run every 6 hours
 0 */6 * * * cd ~/projects/flight-deal-finder && /path/to/venv/bin/python -m flight_deal_finder.cli check >> /tmp/flight-deals.log 2>&1
 ```
-
-## API Strategy
-
-- **Now → July 2026:** Amadeus Self-Service (2,000 free calls/mo)
-- **After July 2026:** Google Flights scraper or Duffel
-
-## Project Status
-
-- [x] Amadeus API client
-- [x] SQLite price history
-- [x] Deal scoring (median-based)
-- [x] Multi-channel alerts (console, email, Telegram, Obsidian)
-- [x] Dedup/cooldown
-- [x] Dry-run mode
-- [ ] Google Flights scraper (post-Amadeus)
-- [ ] Web dashboard
-- [ ] Push notifications
-- [ ] Historical trend charts

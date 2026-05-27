@@ -1,5 +1,5 @@
 """API client package."""
 
-from flight_deal_finder.api.amadeus import AmadeusClient
+from flight_deal_finder.api.flightapi import FlightApiClient
 
-__all__ = ["AmadeusClient"]
+__all__ = ["FlightApiClient"]
