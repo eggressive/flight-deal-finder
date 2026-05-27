@@ -51,17 +51,25 @@ class FlightApiClient:
         origin: str,
         destination: str,
     ) -> list[FlightOffer]:
-        """Parse FlightAPI.io relational JSON response into FlightOffer list."""
-        places = {p["id"]: p for p in data.get("places", [])}
+        """Parse FlightAPI.io relational JSON response into FlightOffer list.
+
+        The API returns arrays indexed by id — we build lookup dicts from them.
+        """
         carriers = {c["id"]: c for c in data.get("carriers", [])}
         legs = {l["id"]: l for l in data.get("legs", [])}
+        segments = {s["id"]: s for s in data.get("segments", [])}
 
         offers: list[FlightOffer] = []
         for itin in data.get("itineraries", []):
             for p_opt in itin.get("pricing_options", []):
-                price = float(p_opt["price"]["amount"])
+                # Skip unpriced itinerary_not_returned entries
+                if p_opt.get("unpriced_type"):
+                    continue
+                price_data = p_opt.get("price", {})
+                if "amount" not in price_data:
+                    continue
+                price = float(price_data["amount"])
 
-                # Resolve leg → segments → airline + stops
                 leg_ids = itin.get("leg_ids", [])
                 airline = "unknown"
                 stops = 0
@@ -72,13 +80,20 @@ class FlightApiClient:
                     outbound = legs.get(leg_ids[0], {})
                     stops = outbound.get("stop_count", 0)
                     departure_date = outbound.get("departure", "")[:10]
-                    seg_ids = outbound.get("segment_ids", [])
-                    if seg_ids and seg_ids[0] in data.get("segments", {}):
-                        carrier_id = data["segments"][seg_ids[0]].get("carrier_id")
-                        if carrier_id and carrier_id in carriers:
-                            airline = carriers[carrier_id].get("name", "unknown")
 
-                # Roundtrip: second leg for return
+                    # Try marketing_carrier_ids on the leg first
+                    mkt_carrier_ids = outbound.get("marketing_carrier_ids", [])
+                    if mkt_carrier_ids and mkt_carrier_ids[0] in carriers:
+                        airline = carriers[mkt_carrier_ids[0]].get("name", "unknown")
+                    else:
+                        # Fallback: get from first segment's marketing_carrier_id
+                        seg_ids = outbound.get("segment_ids", [])
+                        if seg_ids and seg_ids[0] in segments:
+                            seg = segments[seg_ids[0]]
+                            cid = seg.get("marketing_carrier_id")
+                            if cid and cid in carriers:
+                                airline = carriers[cid].get("name", "unknown")
+
                 if len(leg_ids) > 1:
                     inbound = legs.get(leg_ids[1], {})
                     return_date = inbound.get("departure", "")[:10]
@@ -117,10 +132,15 @@ class FlightApiClient:
             infants="0",
             cabin="Economy",
             currency="EUR",
-            region="NL",
         )
         logger.info("FlightAPI oneway: %s→%s %s", origin, destination, departure_date)
         resp = self._client.get(url)
+        if resp.status_code in (403, 429):
+            logger.warning("FlightAPI rate-limited (HTTP %s). Skipping.", resp.status_code)
+            return []
+        if resp.status_code == 404:
+            logger.info("FlightAPI: no flights found for %s→%s on %s", origin, destination, departure_date)
+            return []
         resp.raise_for_status()
         return self._parse_offers(resp.json(), origin, destination)
 
@@ -144,7 +164,6 @@ class FlightApiClient:
             infants="0",
             cabin="Economy",
             currency="EUR",
-            region="NL",
         )
         logger.info(
             "FlightAPI roundtrip: %s→%s %s→%s",
