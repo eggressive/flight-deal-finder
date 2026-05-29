@@ -286,3 +286,18 @@ class TestSearchWindow:
         client = FlightApiClient(api_key="test-key")
         offers = client.search_window("AMS", "JFK", "2026-08-01", "2026-08-03")
         assert offers == []
+
+    def test_search_window_appends_offers_passing_max_price(
+        self, mock_httpx_get: MagicMock, flightapi_response_oneway: dict
+    ):
+        """Offers that pass max_price filter should be appended to results."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = flightapi_response_oneway
+        mock_httpx_get.return_value = mock_response
+
+        client = FlightApiClient(api_key="test-key")
+        offers = client.search_window("AMS", "JFK", "2026-08-15", "2026-08-15",
+                                       max_price=500)
+        assert len(offers) == 1
+        assert offers[0].price_eur == 300.0
