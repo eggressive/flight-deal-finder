@@ -110,7 +110,7 @@ class TelegramChannel:
         try:
             import httpx
 
-            url = f"https://api.telegram.org/bot/{self.bot_token}/sendMessage"
+            url = f"https://api.telegram.org/bot{self.bot_token}/sendMessage"
             resp = httpx.post(
                 url,
                 json={
