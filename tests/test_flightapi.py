@@ -46,7 +46,7 @@ class TestFlightOffer:
 
 
 class TestBuildUrl:
-    def test_build_url_onweway_path(self):
+    def test_build_url_oneway_path(self):
         client = FlightApiClient(api_key="test-key-123")
         url = client._build_url(
             ONEWAY_URL,
