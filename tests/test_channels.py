@@ -111,7 +111,7 @@ class TestTelegramChannel:
 
         mock_httpx_post.assert_called_once()
         call_args = mock_httpx_post.call_args
-        assert call_args[0][0] == "https://api.telegram.org/bot/test-token/sendMessage"
+        assert call_args[0][0] == "https://api.telegram.org/bottest-token/sendMessage"
         assert call_args[1]["json"]["chat_id"] == "12345"
         assert "Amsterdam" in call_args[1]["json"]["text"]
 
