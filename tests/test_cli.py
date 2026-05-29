@@ -77,9 +77,9 @@ class TestHistoryCommand:
             ]
             result = runner.invoke(main, ["history"])
             assert result.exit_code == 0
-            assert "AMS" in result.output
-            assert "JFK" in result.output
-            assert "300.0" in result.output
+            assert result.output == (
+                "[JFK] AMS→300.0: €2026-08-15 @ 2026-05-29 12:00\n"
+            )
 
     def test_history_empty_shows_message(self, tmp_watchlist, monkeypatch):
         monkeypatch.setenv("FLIGHTAPI_API_KEY", "test-key")
