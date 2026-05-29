@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import dataclasses
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 from flight_deal_finder.alerts.channels import (
     ConsoleChannel,
@@ -65,6 +67,33 @@ class TestEmailChannel:
         channel.send(sample_deal)
         assert "not fully configured" in caplog.text
 
+    def test_send_success(self, sample_deal: Deal):
+        """SMTP send happy path — mock smtplib, verify SMTP calls."""
+        with patch("flight_deal_finder.alerts.channels.smtplib.SMTP") as mock_smtp:
+            mock_session = mock_smtp.return_value.__enter__.return_value
+            channel = EmailChannel(
+                host="smtp.test.com", port=587, user="u", password="p",
+                from_addr="from@t.com", to_addr="to@t.com",
+            )
+            channel.send(sample_deal)
+
+        mock_smtp.assert_called_once_with("smtp.test.com", 587, timeout=10)
+        mock_session.starttls.assert_called_once()
+        mock_session.login.assert_called_once_with("u", "p")
+        mock_session.send_message.assert_called_once()
+
+    def test_send_smtp_failure_logs_error(self, sample_deal: Deal):
+        """SMTP exception — send_message raises, no crash."""
+        with patch("flight_deal_finder.alerts.channels.smtplib.SMTP") as mock_smtp:
+            mock_session = mock_smtp.return_value.__enter__.return_value
+            mock_session.send_message.side_effect = OSError("connection refused")
+            channel = EmailChannel(
+                host="smtp.test.com", port=587, user="u", password="p",
+                from_addr="from@t.com", to_addr="to@t.com",
+            )
+            # Should not raise
+            channel.send(sample_deal)
+
 
 class TestTelegramChannel:
     def test_skips_when_no_bot_token(self, sample_deal: Deal, caplog):
@@ -85,6 +114,19 @@ class TestTelegramChannel:
         assert call_args[0][0] == "https://api.telegram.org/bot/test-token/sendMessage"
         assert call_args[1]["json"]["chat_id"] == "12345"
         assert "Amsterdam" in call_args[1]["json"]["text"]
+
+    def test_send_telegram_failure_logs_error(self, sample_deal: Deal,
+                                                mock_httpx_post, caplog):
+        """Telegram HTTP error — error logged, no crash."""
+        mock_response = MagicMock()
+        mock_response.status_code = 500
+        mock_response.raise_for_status.side_effect = Exception("API error")
+        mock_httpx_post.return_value = mock_response
+
+        channel = TelegramChannel(bot_token="test-token", chat_id="12345")
+        channel.send(sample_deal)
+
+        assert "Failed to send Telegram alert" in caplog.text
 
 
 class TestObsidianChannel:

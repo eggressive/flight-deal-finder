@@ -62,6 +62,60 @@ class TestDealEngineInit:
             engine = DealEngine()
             assert len(engine.channels) == 1  # console always present
 
+    def test_channel_wiring_all_channels(self, tmp_watchlist, monkeypatch):
+        monkeypatch.setenv("FLIGHTAPI_API_KEY", "test-key")
+        monkeypatch.setenv("SMTP_HOST", "smtp.test.com")
+        monkeypatch.setenv("SMTP_PORT", "587")
+        monkeypatch.setenv("SMTP_USER", "user")
+        monkeypatch.setenv("SMTP_PASSWORD", "pass")
+        monkeypatch.setenv("ALERT_EMAIL_FROM", "from@test.com")
+        monkeypatch.setenv("ALERT_EMAIL_TO", "to@test.com")
+        monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "bot-tok")
+        monkeypatch.setenv("TELEGRAM_CHAT_ID", "123")
+        monkeypatch.setenv("OBSIDIAN_VAULT_PATH", "/tmp/vault")
+        with patch("flight_deal_finder.engine.load_config") as mock_load_cfg:
+            mock_load_cfg.return_value = {
+                "_secrets": {
+                    "flightapi_api_key": "test-key",
+                    "smtp_host": "smtp.test.com",
+                    "smtp_port": 587,
+                    "smtp_user": "user",
+                    "smtp_password": "pass",
+                    "alert_email_from": "from@test.com",
+                    "alert_email_to": "to@test.com",
+                    "telegram_bot_token": "bot-tok",
+                    "telegram_chat_id": "123",
+                    "obsidian_vault_path": "/tmp/vault",
+                },
+                "alerts": {"channels": ["email", "telegram", "obsidian"]},
+                "routes": [],
+                "providers": ["flightapi"],
+            }
+            engine = DealEngine()
+            # console + email + telegram + obsidian = 4
+            assert len(engine.channels) == 4
+
+    def test_channel_wiring_email_configured(self, tmp_watchlist, monkeypatch):
+        monkeypatch.setenv("FLIGHTAPI_API_KEY", "test-key")
+        monkeypatch.setenv("SMTP_HOST", "smtp.test.com")
+        with patch("flight_deal_finder.engine.load_config") as mock_load_cfg:
+            mock_load_cfg.return_value = {
+                "_secrets": {
+                    "flightapi_api_key": "test-key",
+                    "smtp_host": "smtp.test.com",
+                    "smtp_port": 587,
+                    "smtp_user": "user",
+                    "smtp_password": "",
+                    "alert_email_from": "",
+                    "alert_email_to": "",
+                },
+                "alerts": {"channels": ["email"]},
+                "routes": [],
+                "providers": ["flightapi"],
+            }
+            engine = DealEngine()
+            assert len(engine.channels) == 2  # console + email
+
 
 class TestDealEngineRun:
     def test_no_providers_returns_early(self, tmp_watchlist, monkeypatch):
@@ -158,6 +212,32 @@ class TestDealEngineRun:
             engine.flightapi.search_window.return_value = [direct_offer]
             engine.run()
             assert mock_db["insert"].call_count == 1
+
+    def test_run_no_offers_found(self, tmp_watchlist, monkeypatch, mock_db):
+        """Route returns zero offers — logger path covered."""
+        monkeypatch.setenv("FLIGHTAPI_API_KEY", "test-key")
+        alerts = {"channels": ["console"], "deal_threshold_pct": 25,
+                  "cooldown_hours": 168}
+        with (
+            patch("flight_deal_finder.engine.load_config"),
+            patch.object(DealEngine, "__init__", lambda self: None),
+        ):
+            engine = DealEngine.__new__(DealEngine)
+            engine.dry_run = False
+            engine.channels = [MagicMock()]
+            engine.config = {
+                "_secrets": {"flightapi_api_key": "test-key"},
+                "alerts": alerts,
+                "routes": [{"name": "AMS->SOF", "origin": "AMS",
+                            "destination": "SOF", "max_price": 200,
+                            "date_window": ["2026-07-01", "2026-07-01"],
+                            "enabled": True}],
+                "providers": ["flightapi"],
+            }
+            engine.flightapi = MagicMock()
+            engine.flightapi.search_window.return_value = []
+            engine.run()
+            mock_db["insert"].assert_not_called()
 
     def test_deal_detected_when_discount_above_threshold(self, tmp_watchlist,
                                                           monkeypatch, mock_db):
