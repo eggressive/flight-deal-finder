@@ -32,10 +32,11 @@ routes:
     origin: AMS
     destination: SOF
     max_price: 200
-    date_window: ["2026-07-15", "2026-07-30"]
+    date_window: ["2026-07-15", "2026-09-30"]
     min_stay: 4
     max_stay: 14
     check_interval_h: 6
+    direct_only: true
     enabled: false
 
 # ── Alert settings ──────────────────────────────────────────────────

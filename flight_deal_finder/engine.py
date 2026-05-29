@@ -80,6 +80,7 @@ class DealEngine:
             min_stay = route.get("min_stay", 7)
             max_stay = route.get("max_stay", 14)
             route_name = route["name"]
+            direct_only = route.get("direct_only", False)
 
             logger.info("Checking %s (%s→%s)", route_name, origin, destination)
 
@@ -96,6 +97,14 @@ class DealEngine:
             median = get_median_price(origin, destination)
 
             for offer in offers:
+                # Skip connecting flights when direct_only is set
+                if direct_only and offer.stops > 0:
+                    logger.debug(
+                        "  Skipping %s %s→%s — %d stop(s) (direct_only)",
+                        offer.departure_date, origin, destination, offer.stops,
+                    )
+                    continue
+
                 # Store the price regardless
                 insert_price(
                     origin=origin,
@@ -105,7 +114,7 @@ class DealEngine:
                     return_date=offer.return_date,
                     airline=offer.airline,
                     url=offer.deep_link,
-                    source="amadeus",
+                    source="flightapi",
                 )
 
                 # Deal logic
