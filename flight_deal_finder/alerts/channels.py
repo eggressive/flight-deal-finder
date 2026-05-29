@@ -5,7 +5,6 @@ from __future__ import annotations
 import dataclasses
 import logging
 import smtplib
-import subprocess
 from datetime import datetime
 from email.mime.text import MIMEText
 from pathlib import Path
@@ -45,7 +44,8 @@ class ConsoleChannel:
 
 
 class EmailChannel:
-    def __init__(self, host: str, port: int, user: str, password: str, from_addr: str, to_addr: str):
+    def __init__(self, host: str, port: int, user: str, password: str,
+                 from_addr: str, to_addr: str) -> None:
         self.host = host
         self.port = port
         self.user = user
@@ -110,7 +110,7 @@ class TelegramChannel:
         try:
             import httpx
 
-            url = f"https://api.telegram.org/bot{self.bot_token}/sendMessage"
+            url = f"https://api.telegram.org/bot/{self.bot_token}/sendMessage"
             resp = httpx.post(
                 url,
                 json={

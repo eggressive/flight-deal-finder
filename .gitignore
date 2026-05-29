@@ -6,3 +6,5 @@ venv/
 data/
 *.egg-info/
 dist/
+watchlist.yaml
+.hermes/plans/
