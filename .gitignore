@@ -8,3 +8,4 @@ data/
 dist/
 watchlist.yaml
 .hermes/plans/
+.coverage
