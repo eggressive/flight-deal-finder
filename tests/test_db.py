@@ -72,7 +72,7 @@ class TestGetMedianPrice:
             db_mod.insert_price("AMS", "JFK", price, "2026-08-01", source="flightapi")
         assert db_mod.get_median_price("AMS", "JFK") == 250.0
 
-    def test_only_includes_other_origin_destination(self, tmp_db: sqlite3.Connection):
+    def test_median_only_considers_requested_route(self, tmp_db: sqlite3.Connection):
         import flight_deal_finder.db as db_mod
         db_mod.insert_price("AMS", "JFK", 300.0, "2026-08-01", source="flightapi")
         db_mod.insert_price("AMS", "SOF", 100.0, "2026-08-01", source="flightapi")
@@ -98,7 +98,7 @@ class TestAlertsSent:
         assert row[0] == "AMS:JFK:2026-08-15"
         assert row[1] == 250.0
 
-    def test_was_alerted_disallows_negative_cooldown(self, tmp_db: sqlite3.Connection):
+    def test_was_alerted_allows_zero_cooldown(self, tmp_db: sqlite3.Connection):
         """With cooldown=0 and a record, should still find it (datetime >= now - 0)."""
         import flight_deal_finder.db as db_mod
         db_mod.record_alert("AMS:JFK:2026-08-15", 250.0)

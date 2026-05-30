@@ -6,7 +6,7 @@ venv/
 data/
 *.egg-info/
 dist/
-watchlist.yaml
+
 .hermes/plans/
 .pytest_cache/
 .ruff_cache/
