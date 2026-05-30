@@ -72,7 +72,7 @@ class TestGetMedianPrice:
             db_mod.insert_price("AMS", "JFK", price, "2026-08-01", source="flightapi")
         assert db_mod.get_median_price("AMS", "JFK") == 250.0
 
-    def test_median_only_considers_requested_route(self, tmp_db: sqlite3.Connection):
+    def test_median_excludes_other_routes(self, tmp_db: sqlite3.Connection):
         import flight_deal_finder.db as db_mod
         db_mod.insert_price("AMS", "JFK", 300.0, "2026-08-01", source="flightapi")
         db_mod.insert_price("AMS", "SOF", 100.0, "2026-08-01", source="flightapi")
