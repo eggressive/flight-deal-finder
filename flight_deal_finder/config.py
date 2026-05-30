@@ -18,7 +18,12 @@ def load_config(path: str | Path | None = None) -> dict:
 
     path = Path(path) if path else DEFAULT_WATCHLIST
     if not path.exists():
-        raise FileNotFoundError(f"Watchlist not found: {path}")
+        example = path.with_suffix("").with_name(path.stem + ".yaml.example")
+        if example.exists():
+            import shutil
+            shutil.copy(example, path)
+        else:
+            raise FileNotFoundError(f"Watchlist not found: {path}")
 
     with open(path) as f:
         config = yaml.safe_load(f)

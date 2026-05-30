@@ -329,16 +329,12 @@ class TestDealEngineRun:
             engine.run()
             engine.channels[0].send.assert_not_called()
 
-    def test_deal_triggers_when_no_median(self, tmp_watchlist, monkeypatch, mock_db):
-        """When no historical median, discount is None — but if price <= max_price
-        and deal_threshold_pct defaults to 25, the is_deal check fails because
-        discount_pct is None. With deal_threshold_pct=25 and no median, no alert.
-        But with deal_threshold_pct=0 (any drop is a deal), None < 0 → False.
-        So with no median, we need threshold=0 AND the comparison to accept None?
-        Actually looking at code:
-          is_deal = price <= max and (discount is not None and discount >= threshold)
-        With no median, discount is None → is_deal is False regardless of threshold.
-        This test verifies that behavior (no false positives without data)."""
+    def test_no_deal_when_no_median(self, tmp_watchlist, monkeypatch, mock_db):
+        """When no historical median exists, discount_pct is None.
+        The is_deal check requires both price <= max_price AND
+        (discount_pct is not None AND discount_pct >= threshold).
+        With no median, discount_pct is None → is_deal is False.
+        This prevents false-positive alerts without historical data."""
         monkeypatch.setenv("FLIGHTAPI_API_KEY", "test-key")
         offer = FlightOffer(
             origin="AMS", destination="JFK", price_eur=300.0,

@@ -78,7 +78,7 @@ class TestHistoryCommand:
             result = runner.invoke(main, ["history"])
             assert result.exit_code == 0
             assert result.output == (
-                "[JFK] AMS→300.0: €2026-08-15 @ 2026-05-29 12:00\n"
+                "€300 | AMS→JFK on 2026-08-15 (flightapi)\n"
             )
 
     def test_history_empty_shows_message(self, tmp_watchlist, monkeypatch):

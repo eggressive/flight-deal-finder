@@ -5,8 +5,6 @@ from __future__ import annotations
 import dataclasses
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from flight_deal_finder.alerts.channels import (
     ConsoleChannel,
     Deal,
