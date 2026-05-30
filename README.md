@@ -19,7 +19,8 @@ pip install -e ".[dev]"
 cp .env.example .env
 # Fill in FLIGHTAPI_API_KEY from your FlightAPI dashboard
 
-# 4. Edit your watchlist
+# 4. Set up your watchlist
+cp watchlist.yaml.example watchlist.yaml
 vim watchlist.yaml
 
 # 5. One-shot check
