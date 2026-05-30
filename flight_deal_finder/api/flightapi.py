@@ -56,7 +56,7 @@ class FlightApiClient:
         The API returns arrays indexed by id — we build lookup dicts from them.
         """
         carriers = {c["id"]: c for c in data.get("carriers", [])}
-        legs = {l["id"]: l for l in data.get("legs", [])}
+        legs = {leg["id"]: leg for leg in data.get("legs", [])}
         segments = {s["id"]: s for s in data.get("segments", [])}
 
         offers: list[FlightOffer] = []
@@ -139,7 +139,10 @@ class FlightApiClient:
             logger.warning("FlightAPI rate-limited (HTTP %s). Skipping.", resp.status_code)
             return []
         if resp.status_code == 404:
-            logger.info("FlightAPI: no flights found for %s→%s on %s", origin, destination, departure_date)
+            logger.info(
+                "FlightAPI: no flights found for %s→%s on %s",
+                origin, destination, departure_date,
+            )
             return []
         resp.raise_for_status()
         return self._parse_offers(resp.json(), origin, destination)
