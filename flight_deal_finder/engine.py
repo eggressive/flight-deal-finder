@@ -6,8 +6,8 @@ import logging
 from typing import Any
 
 from flight_deal_finder.alerts.channels import (
-    Deal,
     ConsoleChannel,
+    Deal,
     EmailChannel,
     ObsidianChannel,
     TelegramChannel,

@@ -8,4 +8,6 @@ data/
 dist/
 watchlist.yaml
 .hermes/plans/
+.pytest_cache/
+.ruff_cache/
 .coverage
