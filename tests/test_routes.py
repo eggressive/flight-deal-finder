@@ -107,6 +107,30 @@ class TestValidateRoute:
         raw = {**self._valid, "max_price": None}
         assert validate_route(raw) is None
 
+    # ── Optional numeric field validation ────────────────────────
+
+    def test_min_stay_non_numeric(self) -> None:
+        raw = {**self._valid, "min_stay": "seven"}
+        assert validate_route(raw) is None
+
+    def test_max_stay_non_numeric(self) -> None:
+        raw = {**self._valid, "max_stay": "ten"}
+        assert validate_route(raw) is None
+
+    def test_check_interval_h_non_numeric(self) -> None:
+        raw = {**self._valid, "check_interval_h": "often"}
+        assert validate_route(raw) is None
+
+    def test_optional_numeric_combined(self, caplog) -> None:
+        raw = {**self._valid, "min_stay": "bad", "max_stay": [1, 2]}
+        result = validate_route(raw, index=1)
+        assert result is None
+        warnings = [r[2] for r in caplog.record_tuples if r[1] == logging.WARNING]
+        assert len(warnings) >= 1
+        combined = " ".join(warnings)
+        assert "min_stay" in combined
+        assert "max_stay" in combined
+
     # ── Edge cases ──────────────────────────────────────────────
 
     def test_empty_dict(self) -> None:
