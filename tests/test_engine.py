@@ -33,7 +33,12 @@ def mock_db():
 def engine_with_tmp_config(tmp_watchlist, mock_db, monkeypatch):
     """Create a DealEngine that uses the temp watchlist."""
     monkeypatch.setenv("FLIGHTAPI_API_KEY", "test-key")
-    with patch("flight_deal_finder.engine.load_dotenv", return_value=None):
+    with (
+        patch("flight_deal_finder.engine.load_dotenv", return_value=None),
+        patch("flight_deal_finder.engine.load_config") as mock_load_cfg,
+    ):
+        from flight_deal_finder.config import load_config
+        mock_load_cfg.return_value = load_config(tmp_watchlist)
         yield DealEngine(dry_run=False)
 
 

@@ -199,9 +199,11 @@ class TestSearchOneway:
         assert offers[0].price_eur == 300.0
         mock_httpx_get.assert_called_once()
 
-    def test_search_oneway_rate_limited_returns_empty(self, mock_httpx_get: MagicMock):
+    @pytest.mark.parametrize("status_code", [403, 429])
+    def test_search_oneway_rate_limited_returns_empty(self, mock_httpx_get: MagicMock,
+                                                       status_code: int):
         mock_response = MagicMock()
-        mock_response.status_code = 403
+        mock_response.status_code = status_code
         mock_httpx_get.return_value = mock_response
 
         client = FlightApiClient(api_key="test-key")
@@ -243,9 +245,11 @@ class TestSearchRoundtrip:
         assert len(offers) == 1
         mock_httpx_get.assert_called_once()
 
-    def test_search_roundtrip_rate_limited_returns_empty(self, mock_httpx_get: MagicMock):
+    @pytest.mark.parametrize("status_code", [403, 429])
+    def test_search_roundtrip_rate_limited_returns_empty(self, mock_httpx_get: MagicMock,
+                                                          status_code: int):
         mock_response = MagicMock()
-        mock_response.status_code = 403
+        mock_response.status_code = status_code
         mock_httpx_get.return_value = mock_response
 
         client = FlightApiClient(api_key="test-key")
