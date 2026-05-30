@@ -13,7 +13,11 @@ DEFAULT_WATCHLIST = PROJECT_ROOT / "watchlist.yaml"
 
 
 def load_config(path: str | Path | None = None) -> dict:
-    """Load watchlist YAML, merge with .env secrets."""
+    """Load watchlist YAML, merge with .env secrets.
+
+    Falls back to watchlist.yaml.example if watchlist.yaml is missing
+    (e.g. in a fresh clone).
+    """
     load_dotenv(PROJECT_ROOT / ".env")
 
     path = Path(path) if path else DEFAULT_WATCHLIST

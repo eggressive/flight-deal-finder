@@ -61,23 +61,19 @@ def connecting_offer(sample_offer: FlightOffer) -> FlightOffer:
 
 
 @pytest.fixture
-def tmp_db() -> Generator[sqlite3.Connection, None, None]:
+def tmp_db(monkeypatch: pytest.MonkeyPatch) -> Generator[sqlite3.Connection, None, None]:
     """Monkeypatch DB_PATH to a temp file. Yields connection for direct queries."""
     import flight_deal_finder.db as db_mod
 
     with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
         tmp_path = f.name
 
-    old_path = db_mod.DB_PATH
-    db_mod.DB_PATH = Path(tmp_path)
+    monkeypatch.setattr(db_mod, "DB_PATH", Path(tmp_path))
 
-    try:
-        conn = db_mod._get_conn()
-        yield conn
-        conn.close()
-    finally:
-        db_mod.DB_PATH = old_path
-        Path(tmp_path).unlink(missing_ok=True)
+    conn = db_mod._get_conn()
+    yield conn
+    conn.close()
+    Path(tmp_path).unlink(missing_ok=True)
 
 
 @pytest.fixture

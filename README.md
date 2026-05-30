@@ -36,7 +36,7 @@ flight-deals history
 ## Architecture
 
 ```
-watchlist.yaml  ──→  DealEngine  ──→  FlightAPI.io (oneway + roundtrip)
+watchlist.yaml  ──→  DealEngine  ──→  FlightAPI.io (oneway)
                           │
                           ├── price history (SQLite)
                           ├── deal scoring (median-based)

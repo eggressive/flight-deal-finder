@@ -9,7 +9,6 @@ import pytest
 
 from flight_deal_finder.api.flightapi import (
     ONEWAY_URL,
-    ROUNDTRIP_URL,
     FlightApiClient,
     FlightOffer,
 )
@@ -62,26 +61,6 @@ class TestBuildUrl:
         expected = (
             "https://api.flightapi.io/onewaytrip/test-key-123/"
             "AMS/JFK/2026-08-15/1/0/0/Economy/EUR"
-        )
-        assert url == expected
-
-    def test_build_url_roundtrip_path(self):
-        client = FlightApiClient(api_key="key-abc")
-        url = client._build_url(
-            ROUNDTRIP_URL,
-            origin="LHR",
-            destination="CDG",
-            dep_date="2026-09-01",
-            ret_date="2026-09-15",
-            adults="2",
-            children="0",
-            infants="0",
-            cabin="Economy",
-            currency="EUR",
-        )
-        expected = (
-            "https://api.flightapi.io/roundtrip/key-abc/LHR/CDG/2026-09-01/2026-09-15"
-            "/2/0/0/Economy/EUR"
         )
         assert url == expected
 
@@ -230,52 +209,6 @@ class TestSearchOneway:
         client = FlightApiClient(api_key="test-key")
         with pytest.raises(httpx.HTTPStatusError):
             client.search_oneway("AMS", "JFK", "2026-08-15")
-
-
-class TestSearchRoundtrip:
-    def test_search_roundtrip_success(self, mock_httpx_get: MagicMock,
-                                      flightapi_response_oneway: dict):
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_response.json.return_value = flightapi_response_oneway
-        mock_httpx_get.return_value = mock_response
-
-        client = FlightApiClient(api_key="test-key")
-        offers = client.search_roundtrip("AMS", "JFK", "2026-08-15", "2026-08-30")
-        assert len(offers) == 1
-        mock_httpx_get.assert_called_once()
-
-    @pytest.mark.parametrize("status_code", [403, 429])
-    def test_search_roundtrip_rate_limited_returns_empty(self, mock_httpx_get: MagicMock,
-                                                          status_code: int):
-        mock_response = MagicMock()
-        mock_response.status_code = status_code
-        mock_httpx_get.return_value = mock_response
-
-        client = FlightApiClient(api_key="test-key")
-        offers = client.search_roundtrip("AMS", "JFK", "2026-08-15", "2026-08-30")
-        assert offers == []
-
-    def test_search_roundtrip_404_returns_empty(self, mock_httpx_get: MagicMock):
-        mock_response = MagicMock()
-        mock_response.status_code = 404
-        mock_httpx_get.return_value = mock_response
-
-        client = FlightApiClient(api_key="test-key")
-        offers = client.search_roundtrip("AMS", "JFK", "2026-08-15", "2026-08-30")
-        assert offers == []
-
-    def test_search_roundtrip_500_raises(self, mock_httpx_get: MagicMock):
-        mock_response = MagicMock()
-        mock_response.status_code = 500
-        mock_response.raise_for_status.side_effect = httpx.HTTPStatusError(
-            "server error", request=MagicMock(), response=mock_response,
-        )
-        mock_httpx_get.return_value = mock_response
-
-        client = FlightApiClient(api_key="test-key")
-        with pytest.raises(httpx.HTTPStatusError):
-            client.search_roundtrip("AMS", "JFK", "2026-08-15", "2026-08-30")
 
 
 class TestSearchWindow:
