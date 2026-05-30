@@ -58,6 +58,10 @@ class DealEngine:
             vault = self.secrets.get("obsidian_vault_path") or ""
             self.channels.append(ObsidianChannel(vault_path=vault))
 
+    def close(self) -> None:
+        """Close underlying API clients to release connection resources."""
+        self.flightapi.close()
+
     def run(self) -> None:
         """One-shot check against all enabled routes."""
         alert_cfg: dict[str, Any] = self.config.get("alerts", {})

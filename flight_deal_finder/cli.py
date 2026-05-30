@@ -17,7 +17,10 @@ def main() -> None:
 def check(dry_run: bool) -> None:
     """Run a one-shot price check against the watchlist."""
     engine = DealEngine(dry_run=dry_run)
-    engine.run()
+    try:
+        engine.run()
+    finally:
+        engine.close()
 
 
 @main.command()

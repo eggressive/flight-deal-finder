@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import dataclasses
 import logging
+from types import TracebackType
 
 import httpx
 
@@ -38,6 +39,21 @@ class FlightApiClient:
             raise ValueError("FlightAPI.io API key is required. Get one at https://flightapi.io")
         self.api_key = api_key
         self._client = httpx.Client(timeout=30)
+
+    def close(self) -> None:
+        """Close the underlying HTTP client to release connection resources."""
+        self._client.close()
+
+    def __enter__(self) -> FlightApiClient:
+        return self
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
+        self.close()
 
     def _build_url(self, base: str, **params: str) -> str:
         """Build URL: base/api_key/param1/param2/..."""
