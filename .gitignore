@@ -6,7 +6,6 @@ venv/
 data/
 *.egg-info/
 dist/
-
 .hermes/plans/
 .pytest_cache/
 .ruff_cache/
