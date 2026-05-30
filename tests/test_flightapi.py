@@ -59,7 +59,10 @@ class TestBuildUrl:
             cabin="Economy",
             currency="EUR",
         )
-        expected = "https://api.flightapi.io/onewaytrip/test-key-123/AMS/JFK/2026-08-15/1/0/0/Economy/EUR"
+        expected = (
+            "https://api.flightapi.io/onewaytrip/test-key-123/"
+            "AMS/JFK/2026-08-15/1/0/0/Economy/EUR"
+        )
         assert url == expected
 
     def test_build_url_roundtrip_path(self):

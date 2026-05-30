@@ -44,7 +44,7 @@ def history() -> None:
         print("No price history yet. Run `check` first.")
         return
     for row in rows:
-        print(f"[{row[1]}] {row[0]}→{row[2]}: €{row[3]} @ {row[4]}")
+        print(f"€{row[2]:.0f} | {row[0]}→{row[1]} on {row[3]} ({row[5]})")
 
 
 if __name__ == "__main__":
