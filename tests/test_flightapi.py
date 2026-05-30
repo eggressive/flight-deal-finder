@@ -243,6 +243,36 @@ class TestSearchRoundtrip:
         assert len(offers) == 1
         mock_httpx_get.assert_called_once()
 
+    def test_search_roundtrip_rate_limited_returns_empty(self, mock_httpx_get: MagicMock):
+        mock_response = MagicMock()
+        mock_response.status_code = 403
+        mock_httpx_get.return_value = mock_response
+
+        client = FlightApiClient(api_key="test-key")
+        offers = client.search_roundtrip("AMS", "JFK", "2026-08-15", "2026-08-30")
+        assert offers == []
+
+    def test_search_roundtrip_404_returns_empty(self, mock_httpx_get: MagicMock):
+        mock_response = MagicMock()
+        mock_response.status_code = 404
+        mock_httpx_get.return_value = mock_response
+
+        client = FlightApiClient(api_key="test-key")
+        offers = client.search_roundtrip("AMS", "JFK", "2026-08-15", "2026-08-30")
+        assert offers == []
+
+    def test_search_roundtrip_500_raises(self, mock_httpx_get: MagicMock):
+        mock_response = MagicMock()
+        mock_response.status_code = 500
+        mock_response.raise_for_status.side_effect = httpx.HTTPStatusError(
+            "server error", request=MagicMock(), response=mock_response,
+        )
+        mock_httpx_get.return_value = mock_response
+
+        client = FlightApiClient(api_key="test-key")
+        with pytest.raises(httpx.HTTPStatusError):
+            client.search_roundtrip("AMS", "JFK", "2026-08-15", "2026-08-30")
+
 
 class TestSearchWindow:
     def test_search_window_wide_range_skips_every_third(self, mock_httpx_get: MagicMock):
