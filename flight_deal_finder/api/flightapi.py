@@ -189,6 +189,13 @@ class FlightApiClient:
             origin, destination, departure_date, return_date,
         )
         resp = self._client.get(url)
+        if resp.status_code in (403, 429):
+            logger.warning("FlightAPI rate-limited (HTTP %s). Skipping.", resp.status_code)
+            return []
+        if resp.status_code == 404:
+            logger.info("FlightAPI: no roundtrip flights found for %s→%s %s→%s",
+                        origin, destination, departure_date, return_date)
+            return []
         resp.raise_for_status()
         return self._parse_offers(resp.json(), origin, destination)
 

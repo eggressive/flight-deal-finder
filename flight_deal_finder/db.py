@@ -45,7 +45,7 @@ def insert_price(
     return_date: str | None = None,
     airline: str | None = None,
     url: str | None = None,
-    source: str = "amadeus",
+    source: str = "flightapi",
 ) -> None:
     conn = _get_conn()
     conn.execute(
