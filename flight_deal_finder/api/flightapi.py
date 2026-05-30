@@ -1,4 +1,4 @@
-"""FlightAPI.io client — oneway + roundtrip flight price search.
+"""FlightAPI.io client — oneway flight price search.
 
 Ref: https://docs.flightapi.io
 Auth: API key in URL path (no OAuth). 2 credits per request.
@@ -16,7 +16,6 @@ import httpx
 logger = logging.getLogger(__name__)
 
 ONEWAY_URL = "https://api.flightapi.io/onewaytrip"
-ROUNDTRIP_URL = "https://api.flightapi.io/roundtrip"
 
 
 @dataclasses.dataclass
@@ -163,42 +162,6 @@ class FlightApiClient:
         resp.raise_for_status()
         return self._parse_offers(resp.json(), origin, destination)
 
-    def search_roundtrip(
-        self,
-        origin: str,
-        destination: str,
-        departure_date: str,
-        return_date: str,
-        adults: int = 1,
-    ) -> list[FlightOffer]:
-        """Search round-trip flights. 2 credits."""
-        url = self._build_url(
-            ROUNDTRIP_URL,
-            origin=origin,
-            destination=destination,
-            dep_date=departure_date,
-            ret_date=return_date,
-            adults=str(adults),
-            children="0",
-            infants="0",
-            cabin="Economy",
-            currency="EUR",
-        )
-        logger.info(
-            "FlightAPI roundtrip: %s→%s %s→%s",
-            origin, destination, departure_date, return_date,
-        )
-        resp = self._client.get(url)
-        if resp.status_code in (403, 429):
-            logger.warning("FlightAPI rate-limited (HTTP %s). Skipping.", resp.status_code)
-            return []
-        if resp.status_code == 404:
-            logger.info("FlightAPI: no roundtrip flights found for %s→%s %s→%s",
-                        origin, destination, departure_date, return_date)
-            return []
-        resp.raise_for_status()
-        return self._parse_offers(resp.json(), origin, destination)
-
     def search_window(
         self,
         origin: str,
@@ -212,8 +175,7 @@ class FlightApiClient:
         """Search across a date window.
 
         Checks every 3rd departure date (or daily for narrow windows).
-        Uses oneway search to minimize credits. If return dates matter,
-        use search_roundtrip directly.
+        Uses oneway search to minimize credits.
         """
         from datetime import datetime, timedelta
 
