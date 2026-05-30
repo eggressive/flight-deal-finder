@@ -157,3 +157,29 @@ class TestValidateRoute:
     def test_unnamed_route_warning(self, caplog) -> None:
         validate_route({}, index=0)
         assert any("<unnamed>" in r[2] for r in caplog.record_tuples if r[1] == logging.WARNING)
+
+    # ── Non-mapping guard ───────────────────────────────────────
+
+    def test_non_mapping_string(self, caplog) -> None:
+        result = validate_route("not a dict", index=7)
+        assert result is None
+        assert any("not a mapping" in r[2] for r in caplog.record_tuples if r[1] == logging.WARNING)
+
+    def test_non_mapping_none(self, caplog) -> None:
+        result = validate_route(None, index=3)
+        assert result is None
+        assert any("not a mapping" in r[2] for r in caplog.record_tuples if r[1] == logging.WARNING)
+
+    def test_non_mapping_int(self) -> None:
+        result = validate_route(42, index=0)
+        assert result is None
+
+    # ── enabled bool guard ──────────────────────────────────────
+
+    def test_enabled_string_false(self) -> None:
+        raw = {**self._valid, "enabled": "false"}
+        assert validate_route(raw) is None
+
+    def test_enabled_null(self) -> None:
+        raw = {**self._valid, "enabled": None}
+        assert validate_route(raw) is None
