@@ -15,6 +15,7 @@ from flight_deal_finder.alerts.channels import (
 from flight_deal_finder.api.flightapi import FlightApiClient
 from flight_deal_finder.config import load_config
 from flight_deal_finder.db import get_median_price, insert_price, record_alert, was_alerted_recently
+from flight_deal_finder.routes import validate_route
 
 logger = logging.getLogger(__name__)
 
@@ -73,18 +74,22 @@ class DealEngine:
             logger.warning("No API providers configured. Nothing to do.")
             return
 
-        for route in self.config.get("routes", []):
-            if not route.get("enabled", True):
+        for idx, route_raw in enumerate(self.config.get("routes", [])):
+            route = validate_route(route_raw, index=idx)
+            if route is None:
                 continue
 
-            origin = route["origin"]
-            destination = route["destination"]
-            max_price = route["max_price"]
-            date_from, date_to = route["date_window"]
-            min_stay = route.get("min_stay", 7)
-            max_stay = route.get("max_stay", 14)
-            route_name = route["name"]
-            direct_only = route.get("direct_only", False)
+            if not route.enabled:
+                continue
+
+            origin = route.origin
+            destination = route.destination
+            max_price = route.max_price
+            date_from, date_to = route.date_window
+            min_stay = route.min_stay
+            max_stay = route.max_stay
+            route_name = route.name
+            direct_only = route.extra.get("direct_only", False)
 
             logger.info("Checking %s (%s→%s)", route_name, origin, destination)
 
