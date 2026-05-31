@@ -47,8 +47,8 @@ Last updated: 2026-05-31
 | 2 | Server-side max-price filter (save credits) | `flight_deal_finder/api/flightapi.py` | 2 hrs | Pass price param to FlightAPI.io instead of client-side filtering |
 | 3 | Structured output from `check` command | `flight_deal_finder/cli.py` | 1 hr | Print summary: "Checked 3 routes, 12 offers, 1 deal found" |
 | 4 | HTML email for deal alerts | `flight_deal_finder/alerts/channels.py` | 2 hrs | Better formatting + clickable links in email alerts |
-| 5 | `search_window` actually uses `min_stay`/`max_stay` via roundtrip integration | `flight_deal_finder/api/flightapi.py` | ✅ Done | Roundtrip search added: `search_roundtrip_window` with return-date computation |
-| 6 | Route-level `check_interval_h` support | `flight_deal_finder/engine.py` + scheduler | 4 hrs | Watchlist declares it but engine never reads it |
+| 5 | `search_window` actually uses `min_stay`/`max_stay` via roundtrip integration | `flight_deal_finder/api/flightapi.py` | ✅ Done | Roundtrip search added: `search_roundtrip_window` |
+| 6 | ~~Route-level `check_interval_h` support~~ | — | ✅ Removed | Field was never consumed by engine/CLI; removed in PR #9
 | 7 | CI/CD (GitHub Actions) | `.github/workflows/` | 2 hrs | pytest + ruff on every PR |
 | 8 | `get_median_price` scaling note | `flight_deal_finder/db.py` | 30 min | Client-side median on all rows; fine for now, document scaling concern |
 
@@ -70,10 +70,12 @@ Last updated: 2026-05-31
 
 ## Open Questions ❓
 
-1. **Roundtrip search:** ✅ Implemented — `search_roundtrip()` re-added to `FlightApiClient`, engine branches on `is_roundtrip`, `return_date_window` optional override.
-2. **`min_stay`/`max_stay`:** ✅ Used by `search_roundtrip_window()` for return-date range computation. Still only informational for oneway `search_window()`.
-3. **`check_interval_h`:** Watchlist declares it but engine never reads it. Remove from schema, or implement per-route scheduling?
+1. **Per-route scheduling:** `check_interval_h` was removed in PR #9 because no scheduler exists. Build a daemon/systemd timer that respects per-route intervals, or keep the tool as a one-shot cron job?
+2. **`min_stay`/`max_stay` for oneway:** Currently used by `search_roundtrip_window()` for return-date computation, but still ignored by `search_window()` (oneway). Should oneway routes also respect these (e.g., for multi-city trips), or are they strictly roundtrip params?
+3. **`deep_link` is fake:** `flightapi.py` generates a Google Travel search URL, not an actual booking link. Rename to `search_link`? Parse real deep links from API response?
+4. **CI/CD:** Add GitHub Actions for pytest + ruff on PRs? (Low effort, high value.)
+5. **Error monitoring:** Add Sentry or similar for silent API/alert failures? Currently only logs to console.
 
 ---
 
-*Generated from CODEBASE_ANALYSIS.md audit (11/25 items resolved, 14 open) + README accuracy audit.*
+*Last updated: 2026-05-31 — after PR #8 (roundtrip) + PR #9 (remove check_interval_h).*

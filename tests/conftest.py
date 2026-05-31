@@ -89,7 +89,6 @@ def tmp_watchlist(tmp_path: Path) -> Path:
                 "date_window": ["2026-08-01", "2026-08-31"],
                 "min_stay": 5,
                 "max_stay": 10,
-                "check_interval_h": 12,
                 "enabled": True,
             },
             {
@@ -100,7 +99,6 @@ def tmp_watchlist(tmp_path: Path) -> Path:
                 "date_window": ["2026-07-15", "2026-09-30"],
                 "min_stay": 4,
                 "max_stay": 14,
-                "check_interval_h": 6,
                 "direct_only": True,
                 "enabled": True,
             },
