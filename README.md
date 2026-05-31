@@ -22,6 +22,7 @@ cp .env.example .env
 # 4. Set up your watchlist
 cp watchlist.yaml.example watchlist.yaml
 vim watchlist.yaml
+# (If watchlist.yaml is missing, the tool auto-copies watchlist.yaml.example on first run)
 
 # 5. One-shot check
 flight-deals check
@@ -31,17 +32,22 @@ flight-deals check --dry-run
 
 # 7. View history
 flight-deals history
+
+# 8. List watchlist routes
+flight-deals watchlist
 ```
 
 ## Architecture
 
 ```
-watchlist.yaml  ──→  DealEngine  ──→  FlightAPI.io (oneway)
-                          │
-                          ├── price history (SQLite)
-                          ├── deal scoring (median-based)
-                          └── alert channels (console, email, Telegram, Obsidian)
+watchlist.yaml  ──→  Route Validation  ──→  DealEngine  ──→  FlightAPI.io (oneway search across date window)
+                              │
+                              ├── price history (SQLite)
+                              ├── deal scoring (median-based)
+                              └── alert channels (console, email, Telegram, Obsidian)
 ```
+
+Invalid routes (missing fields, bad types) are silently skipped with a logged warning.
 
 ## API Provider
 
@@ -54,6 +60,17 @@ watchlist.yaml  ──→  DealEngine  ──→  FlightAPI.io (oneway)
 | Endpoints | Oneway, roundtrip, multi-city, tracking, schedules |
 | Credits | 2 per flight search |
 
+## Route Options
+
+The watchlist supports these optional fields per route:
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `enabled` | `true` | Set `false` to skip checking this route |
+| `direct_only` | `false` | Skip flights with 1+ stops |
+| `min_stay` | `7` | Minimum trip length in days |
+| `max_stay` | `14` | Maximum trip length in days |
+
 ## Alert Channels
 
 | Channel | Config |
@@ -63,9 +80,24 @@ watchlist.yaml  ──→  DealEngine  ──→  FlightAPI.io (oneway)
 | `telegram` | Bot token + chat ID via `.env` |
 | `obsidian` | Writes to `Log/flight-deals-YYYY-MM-DD.md` |
 
+## Development
+
+```bash
+# Run tests
+pytest tests/
+
+# Run lint
+cd ~/projects/flight-deal-finder && source venv/bin/activate && ruff check flight_deal_finder/ tests/
+```
+
+The project includes a full pytest suite covering channels, CLI, config, DB, engine,
+flight API, and route validation.
+
 ## Cron Setup
 
 ```bash
 # Run every 6 hours
-0 */6 * * * cd ~/projects/flight-deal-finder && /path/to/venv/bin/python -m flight_deal_finder.cli check >> /tmp/flight-deals.log 2>&1
+0 */6 * * * cd ~/projects/flight-deal-finder && /path/to/venv/bin/flight-deals check >> /tmp/flight-deals.log 2>&1
 ```
+
+The CLI uses `FlightApiClient` with automatic HTTP cleanup via context manager.
