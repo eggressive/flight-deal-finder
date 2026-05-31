@@ -160,7 +160,7 @@ class TestDealEngineRun:
             origin="AMS", destination="SOF", price_eur=150.0,
             departure_date="2026-07-20", return_date=None,
             airline="Bulgaria Air", stops=0,
-            deep_link="https://example.com",
+            search_link="https://example.com",
         )
         with (
             patch("flight_deal_finder.engine.load_config"),
@@ -198,7 +198,7 @@ class TestDealEngineRun:
             origin="AMS", destination="SOF", price_eur=150.0,
             departure_date="2026-07-20", return_date=None,
             airline="Bulgaria Air", stops=0,
-            deep_link="https://example.com",
+            search_link="https://example.com",
         )
         with patch("flight_deal_finder.engine.load_config"), \
              patch.object(DealEngine, "__init__", lambda self: None):
@@ -250,7 +250,7 @@ class TestDealEngineRun:
         offer = FlightOffer(
             origin="AMS", destination="JFK", price_eur=280.0,
             departure_date="2026-08-15", return_date=None,
-            airline="KLM", stops=0, deep_link="https://example.com",
+            airline="KLM", stops=0, search_link="https://example.com",
         )
         with (
             patch("flight_deal_finder.engine.load_config"),
@@ -282,7 +282,7 @@ class TestDealEngineRun:
         offer = FlightOffer(
             origin="AMS", destination="JFK", price_eur=380.0,
             departure_date="2026-08-15", return_date=None,
-            airline="KLM", stops=0, deep_link="https://example.com",
+            airline="KLM", stops=0, search_link="https://example.com",
         )
         with patch("flight_deal_finder.engine.load_config"), \
              patch.object(DealEngine, "__init__", lambda self: None):
@@ -313,7 +313,7 @@ class TestDealEngineRun:
         offer = FlightOffer(
             origin="AMS", destination="JFK", price_eur=280.0,
             departure_date="2026-08-15", return_date=None,
-            airline="KLM", stops=0, deep_link="https://example.com",
+            airline="KLM", stops=0, search_link="https://example.com",
         )
         with patch("flight_deal_finder.engine.load_config"), \
              patch.object(DealEngine, "__init__", lambda self: None):
@@ -344,7 +344,7 @@ class TestDealEngineRun:
         offer = FlightOffer(
             origin="AMS", destination="JFK", price_eur=300.0,
             departure_date="2026-08-15", return_date=None,
-            airline="KLM", stops=0, deep_link="https://example.com",
+            airline="KLM", stops=0, search_link="https://example.com",
         )
         with patch("flight_deal_finder.engine.load_config"), \
              patch.object(DealEngine, "__init__", lambda self: None):
@@ -373,7 +373,7 @@ class TestDealEngineRun:
         offer = FlightOffer(
             origin="AMS", destination="JFK", price_eur=200.0,
             departure_date="2026-08-15", return_date=None,
-            airline="KLM", stops=0, deep_link="https://example.com",
+            airline="KLM", stops=0, search_link="https://example.com",
         )
         with patch("flight_deal_finder.engine.load_config"), \
              patch.object(DealEngine, "__init__", lambda self: None):

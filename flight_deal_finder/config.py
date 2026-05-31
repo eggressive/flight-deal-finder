@@ -11,6 +11,8 @@ from dotenv import load_dotenv
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_WATCHLIST = PROJECT_ROOT / "watchlist.yaml"
 
+load_dotenv(PROJECT_ROOT / ".env")
+
 
 def load_config(path: str | Path | None = None) -> dict:
     """Load watchlist YAML, merge with .env secrets.
@@ -18,7 +20,6 @@ def load_config(path: str | Path | None = None) -> dict:
     Falls back to watchlist.yaml.example if watchlist.yaml is missing
     (e.g. in a fresh clone).
     """
-    load_dotenv(PROJECT_ROOT / ".env")
 
     path = Path(path) if path else DEFAULT_WATCHLIST
     if not path.exists():

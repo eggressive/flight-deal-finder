@@ -28,7 +28,7 @@ class FlightOffer:
     return_date: str | None
     airline: str
     stops: int
-    deep_link: str
+    search_link: str
 
 
 class FlightApiClient:
@@ -123,7 +123,7 @@ class FlightApiClient:
                         return_date=return_date,
                         airline=airline,
                         stops=stops,
-                        deep_link=f"https://www.google.com/travel/flights?q=Flights+to+{destination}+from+{origin}+on+{departure_date}",
+                        search_link=f"https://www.google.com/travel/flights?q=Flights+to+{destination}+from+{origin}+on+{departure_date}",
                     )
                 )
         return offers

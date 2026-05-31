@@ -23,7 +23,7 @@ class Deal:
     stops: int
     median_price: float | None
     discount_pct: float | None
-    deep_link: str
+    search_link: str
     route_name: str
 
 
@@ -66,7 +66,7 @@ class EmailChannel:
             + (f" | Return: {deal.return_date}\n" if deal.return_date else "\n")
             + f"Price: €{deal.price_eur:.2f}{pct}\n"
             f"Airline: {deal.airline} | Stops: {deal.stops}\n"
-            + (f"Book: {deal.deep_link}\n" if deal.deep_link else "")
+            + (f"Book: {deal.search_link}\n" if deal.search_link else "")
         )
 
         msg = MIMEText(body)
@@ -103,7 +103,7 @@ class TelegramChannel:
             + (f" → {deal.return_date}\n" if deal.return_date else "\n")
             + f"💰 *€{deal.price_eur:.2f}*{pct}\n"
             f"🛫 {deal.airline} | {stops_str}\n"
-            + (f"[Book now]({deal.deep_link})" if deal.deep_link else "")
+            + (f"[Book now]({deal.search_link})" if deal.search_link else "")
         )
 
         # Use subprocess — avoids pulling in python-telegram-bot dep for one call
@@ -150,7 +150,7 @@ class ObsidianChannel:
             + (f" | **Return:** {deal.return_date}\n" if deal.return_date else "\n")
             + f"- **Price:** €{deal.price_eur:.2f}{pct}\n"
             f"- **Airline:** {deal.airline} | {stops_str}\n"
-            + (f"- **Book:** {deal.deep_link}\n" if deal.deep_link else "")
+            + (f"- **Book:** {deal.search_link}\n" if deal.search_link else "")
             + f"- **Scraped:** {datetime.now().strftime('%H:%M')}\n\n"
         )
 

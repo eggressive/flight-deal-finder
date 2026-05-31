@@ -131,7 +131,7 @@ class DealEngine:
                     departure_date=offer.departure_date,
                     return_date=offer.return_date,
                     airline=offer.airline,
-                    url=offer.deep_link,
+                    url=offer.search_link,
                     source="flightapi",
                 )
 
@@ -163,13 +163,13 @@ class DealEngine:
                     stops=offer.stops,
                     median_price=median,
                     discount_pct=discount_pct,
-                    deep_link=offer.deep_link,
+                    search_link=offer.search_link,
                     route_name=route_name,
                 )
 
                 if self.dry_run:
                     logger.info("[DRY RUN] Would alert on: %s", route_name)
-                    ConsoleChannel().send(deal)
+                    self.channels[0].send(deal)
                 else:
                     for channel in self.channels:
                         channel.send(deal)
