@@ -70,10 +70,12 @@ Last updated: 2026-05-31
 
 ## Open Questions ❓
 
-1. **Roundtrip search:** ✅ Implemented — `search_roundtrip()` re-added to `FlightApiClient`, engine branches on `is_roundtrip`, `return_date_window` optional override.
-2. **`min_stay`/`max_stay`:** ✅ Used by `search_roundtrip_window()` for return-date range computation. Still only informational for oneway `search_window()`.
-3. **`check_interval_h`:** Removed — field declared and validated but never consumed by engine/CLI. Re-add when per-route scheduling is implemented.
+1. **Per-route scheduling:** `check_interval_h` was removed in PR #9 because no scheduler exists. Build a daemon/systemd timer that respects per-route intervals, or keep the tool as a one-shot cron job?    
+2. **`min_stay`/`max_stay` for oneway:** Currently used by `search_roundtrip_window()` for return-date computation, but still ignored by `search_window()` (oneway). Should oneway routes also respect these (e.g., for multi-city trips), or are they strictly roundtrip params?
+3. **`deep_link` is fake:** `flightapi.py` generates a Google Travel search URL, not an actual booking link. Rename to `search_link`? Parse real deep links from API response?
+4. **CI/CD:** Add GitHub Actions for pytest + ruff on PRs? (Low effort, high value.)
+5. **Error monitoring:** Add Sentry or similar for silent API/alert failures? Currently only logs to console.
 
 ---
 
-*Generated from CODEBASE_ANALYSIS.md audit (11/25 items resolved, 14 open) + README accuracy audit.*
+*Last updated: 2026-05-31 — after PR #8 (roundtrip) + PR #9 (remove check_interval_h).*
