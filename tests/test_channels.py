@@ -20,7 +20,7 @@ class TestDeal:
         expected = {
             "origin", "destination", "price_eur", "departure_date",
             "return_date", "airline", "stops", "median_price",
-            "discount_pct", "deep_link", "route_name",
+            "discount_pct", "search_link", "route_name",
         }
         assert expected.issubset(fields)
 

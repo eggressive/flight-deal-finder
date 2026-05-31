@@ -25,7 +25,7 @@ def sample_offer() -> FlightOffer:
         return_date="2026-08-30",
         airline="KLM",
         stops=0,
-        deep_link="https://www.google.com/travel/flights?q=Flights+to+JFK+from+AMS+on+2026-08-15",
+        search_link="https://www.google.com/travel/flights?q=Flights+to+JFK+from+AMS+on+2026-08-15",
     )
 
 
@@ -41,7 +41,7 @@ def sample_deal(sample_offer: FlightOffer) -> Deal:
         stops=sample_offer.stops,
         median_price=400.0,
         discount_pct=25.0,
-        deep_link=sample_offer.deep_link,
+        search_link=sample_offer.search_link,
         route_name="Amsterdam → New York",
     )
 
@@ -56,7 +56,7 @@ def connecting_offer(sample_offer: FlightOffer) -> FlightOffer:
         return_date=sample_offer.return_date,
         airline="Lufthansa",
         stops=2,
-        deep_link=sample_offer.deep_link,
+        search_link=sample_offer.search_link,
     )
 
 

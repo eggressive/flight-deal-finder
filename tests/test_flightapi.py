@@ -25,7 +25,7 @@ class TestFlightOffer:
             return_date="2026-08-30",
             airline="KLM",
             stops=0,
-            deep_link="https://example.com",
+            search_link="https://example.com",
         )
         assert offer.origin == "AMS"
         assert offer.price_eur == 300.0
@@ -40,7 +40,7 @@ class TestFlightOffer:
             return_date=None,
             airline="KLM",
             stops=0,
-            deep_link="https://example.com",
+            search_link="https://example.com",
         )
         assert offer.return_date is None
 
@@ -103,7 +103,7 @@ class TestParseOffers:
         assert o.airline == "KLM Royal Dutch Airlines"
         assert o.stops == 0
         assert o.return_date is None
-        assert "AMS" in o.deep_link
+        assert "AMS" in o.search_link
 
     def test_parse_skips_unpriced_entries(self, flightapi_response_unpriced: dict):
         client = FlightApiClient(api_key="test-key")
