@@ -9,7 +9,7 @@ from typing import Any
 logger = logging.getLogger(__name__)
 
 _REQUIRED_STRINGS = ("name", "origin", "destination")
-_OPTIONAL_INTS = ("min_stay", "max_stay", "check_interval_h")
+_OPTIONAL_INTS = ("min_stay", "max_stay")
 
 
 @dataclass
@@ -25,7 +25,6 @@ class Route:
     min_stay: int = 7
     max_stay: int = 14
     enabled: bool = True
-    check_interval_h: int = 24
     is_roundtrip: bool = False
     return_date_from: str = ""
     return_date_to: str = ""
@@ -139,15 +138,12 @@ def validate_route(raw: Any, index: int = 0) -> Route | None:
         min_stay=int(raw["min_stay"]) if "min_stay" in raw else 7,
         max_stay=int(raw["max_stay"]) if "max_stay" in raw else 14,
         enabled=raw.get("enabled", True),
-        check_interval_h=int(raw["check_interval_h"])
-        if "check_interval_h" in raw
-        else 24,
         is_roundtrip=raw.get("is_roundtrip", False),
         return_date_from=return_date_from,
         return_date_to=return_date_to,
         extra={k: v for k, v in raw.items() if k not in {
             "name", "origin", "destination", "max_price", "date_window",
-            "min_stay", "max_stay", "enabled", "check_interval_h",
+            "min_stay", "max_stay", "enabled",
             "is_roundtrip", "return_date_window",
         }},
     )
