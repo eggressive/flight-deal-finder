@@ -183,3 +183,57 @@ class TestValidateRoute:
     def test_enabled_null(self) -> None:
         raw = {**self._valid, "enabled": None}
         assert validate_route(raw) is None
+
+    # ── is_roundtrip bool guard ──────────────────────────────────
+
+    def test_is_roundtrip_string_rejected(self) -> None:
+        raw = {**self._valid, "is_roundtrip": "true"}
+        assert validate_route(raw) is None
+
+    def test_is_roundtrip_null_rejected(self) -> None:
+        raw = {**self._valid, "is_roundtrip": None}
+        assert validate_route(raw) is None
+
+    def test_is_roundtrip_default_false(self) -> None:
+        route = validate_route(self._valid)
+        assert route is not None
+        assert route.is_roundtrip is False
+
+    def test_is_roundtrip_true(self) -> None:
+        raw = {**self._valid, "is_roundtrip": True}
+        route = validate_route(raw)
+        assert route is not None
+        assert route.is_roundtrip is True
+
+    # ── return_date_window validation ────────────────────────────
+
+    def test_return_date_window_valid(self) -> None:
+        raw = {
+            **self._valid,
+            "is_roundtrip": True,
+            "return_date_window": ["2026-09-10", "2026-09-20"],
+        }
+        route = validate_route(raw)
+        assert route is not None
+        assert route.return_date_from == "2026-09-10"
+        assert route.return_date_to == "2026-09-20"
+        assert route.return_date_window == ("2026-09-10", "2026-09-20")
+
+    def test_return_date_window_missing_ok(self) -> None:
+        raw = {**self._valid, "is_roundtrip": True}
+        route = validate_route(raw)
+        assert route is not None
+        assert route.return_date_from == ""
+        assert route.return_date_to == ""
+
+    def test_return_date_window_not_list(self) -> None:
+        raw = {**self._valid, "return_date_window": "2026-09-10"}
+        assert validate_route(raw) is None
+
+    def test_return_date_window_one_element(self) -> None:
+        raw = {**self._valid, "return_date_window": ["2026-09-10"]}
+        assert validate_route(raw) is None
+
+    def test_return_date_window_non_strings(self) -> None:
+        raw = {**self._valid, "return_date_window": [20260910, 20260920]}
+        assert validate_route(raw) is None

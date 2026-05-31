@@ -1,0 +1,75 @@
+# ── Flight Deal Finder :: Watchlist ─────────────────────────────────
+# Each entry defines a route you want to track.
+#  - origin / destination: IATA airport codes (AMS, LHR, JFK, etc.)
+#  - max_price:        alert if any flight drops below this (EUR)
+#  - date_window:      departure date range [YYYY-MM-DD, YYYY-MM-DD]
+#  - check_interval_h: how often to re-check (hours) — used by cron
+#  - min_stay / max_stay: trip length constraints (nights)
+#  - enabled:          false to pause tracking without deleting
+#  - is_roundtrip:     true to search roundtrip flights (default: false)
+#  - return_date_window: return date range for roundtrip searches
+#                        [YYYY-MM-DD, YYYY-MM-DD] (optional;
+#                        defaults to departure + min_stay..max_stay)
+
+routes:
+  - name: "Amsterdam → Tokyo (Haneda)"
+    origin: AMS
+    destination: HND
+    max_price: 700
+    date_window: ["2026-09-01", "2026-09-15"]
+    min_stay: 7
+    max_stay: 14
+    check_interval_h: 6
+    enabled: true
+
+  - name: "Amsterdam → New York"
+    origin: AMS
+    destination: JFK
+    max_price: 350
+    date_window: ["2026-08-01", "2026-08-31"]
+    min_stay: 5
+    max_stay: 10
+    check_interval_h: 12
+    enabled: true
+
+  - name: "Amsterdam → Sofia (roundtrip)"
+    origin: AMS
+    destination: SOF
+    max_price: 200
+    date_window: ["2026-07-15", "2026-08-01"]
+    min_stay: 4
+    max_stay: 14
+    check_interval_h: 6
+    is_roundtrip: true
+    return_date_window: ["2026-07-19", "2026-08-15"]
+    enabled: false
+
+  - name: "Amsterdam → Sofia (direct only)"
+    origin: AMS
+    destination: SOF
+    max_price: 200
+    date_window: ["2026-07-15", "2026-08-01"]
+    min_stay: 4
+    max_stay: 14
+    check_interval_h: 6
+    direct_only: true
+    enabled: false
+
+# ── Alert settings ──────────────────────────────────────────────────
+alerts:
+  # Deal threshold: alert if price drops by this % below historical median
+  deal_threshold_pct: 25
+
+  # Don't re-alert for the same route+date if alerted within this window
+  cooldown_hours: 168  # 7 days
+
+  # Channels to deliver to (set empty list to run in dry-run mode)
+  channels:
+    - console    # always on — prints to stdout
+    # - email    # uncomment when SMTP configured
+    # - telegram # uncomment when bot configured
+    # - obsidian # uncomment when vault path set
+
+# ── API providers (ordered — first non-error result wins) ──────────
+providers:
+  - flightapi

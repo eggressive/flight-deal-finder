@@ -16,6 +16,7 @@ import httpx
 logger = logging.getLogger(__name__)
 
 ONEWAY_URL = "https://api.flightapi.io/onewaytrip"
+ROUNDTRIP_URL = "https://api.flightapi.io/roundtrip"
 
 
 @dataclasses.dataclass
@@ -162,6 +163,42 @@ class FlightApiClient:
         resp.raise_for_status()
         return self._parse_offers(resp.json(), origin, destination)
 
+    def search_roundtrip(
+        self,
+        origin: str,
+        destination: str,
+        departure_date: str,
+        return_date: str,
+        adults: int = 1,
+    ) -> list[FlightOffer]:
+        """Search round-trip flights. 2 credits."""
+        url = self._build_url(
+            ROUNDTRIP_URL,
+            origin=origin,
+            destination=destination,
+            dep_date=departure_date,
+            ret_date=return_date,
+            adults=str(adults),
+            children="0",
+            infants="0",
+            cabin="Economy",
+            currency="EUR",
+        )
+        logger.info(
+            "FlightAPI roundtrip: %s→%s %s→%s",
+            origin, destination, departure_date, return_date,
+        )
+        resp = self._client.get(url)
+        if resp.status_code in (403, 429):
+            logger.warning("FlightAPI rate-limited (HTTP %s). Skipping.", resp.status_code)
+            return []
+        if resp.status_code == 404:
+            logger.info("FlightAPI: no roundtrip flights found for %s→%s %s→%s",
+                        origin, destination, departure_date, return_date)
+            return []
+        resp.raise_for_status()
+        return self._parse_offers(resp.json(), origin, destination)
+
     def search_window(
         self,
         origin: str,
@@ -196,6 +233,82 @@ class FlightApiClient:
                     all_offers.append(o)
             except httpx.HTTPError as e:
                 logger.error("FlightAPI error for %s: %s", dep_str, e)
+            current += timedelta(days=step)
+
+        all_offers.sort(key=lambda o: o.price_eur)
+        return all_offers
+
+    def search_roundtrip_window(
+        self,
+        origin: str,
+        destination: str,
+        date_from: str,
+        date_to: str,
+        min_stay: int = 7,
+        max_stay: int = 14,
+        max_price: float | None = None,
+        return_date_from: str | None = None,
+        return_date_to: str | None = None,
+    ) -> list[FlightOffer]:
+        """Search roundtrip across a departure date window.
+
+        For each departure date, computes return-date range from min_stay/max_stay
+        (or overrides via return_date_from/return_date_to) and calls
+        search_roundtrip(). Uses step=3 for wide windows (>21 days) to manage
+        credit burn (2 credits per roundtrip call).
+        """
+        from datetime import datetime, timedelta
+
+        d_start = datetime.strptime(date_from, "%Y-%m-%d")
+        d_end = datetime.strptime(date_to, "%Y-%m-%d")
+        delta = d_end - d_start
+
+        # Resolve return-date range overrides
+        r_from: datetime | None = None
+        r_to: datetime | None = None
+        if return_date_from:
+            r_from = datetime.strptime(return_date_from, "%Y-%m-%d")
+        if return_date_to:
+            r_to = datetime.strptime(return_date_to, "%Y-%m-%d")
+
+        all_offers: list[FlightOffer] = []
+        step = 3 if delta.days > 21 else 1
+        current = d_start
+        while current <= d_end:
+            dep_str = current.strftime("%Y-%m-%d")
+
+            # Determine return dates for this departure
+            if r_from and r_to:
+                ret_dates = [r_from]
+                ret_cursor = r_from
+                while ret_cursor < r_to:
+                    ret_cursor += timedelta(days=3)
+                    if ret_cursor <= r_to:
+                        ret_dates.append(ret_cursor)
+            else:
+                ret_start = current + timedelta(days=min_stay)
+                ret_end = current + timedelta(days=max_stay)
+                ret_dates = [ret_start]
+                ret_cursor = ret_start
+                while ret_cursor < ret_end:
+                    ret_cursor += timedelta(days=3)
+                    if ret_cursor <= ret_end:
+                        ret_dates.append(ret_cursor)
+
+            for ret_date in ret_dates:
+                ret_str = ret_date.strftime("%Y-%m-%d")
+                try:
+                    offers = self.search_roundtrip(
+                        origin, destination, dep_str, ret_str,
+                    )
+                    for o in offers:
+                        if max_price and o.price_eur > max_price:
+                            continue
+                        all_offers.append(o)
+                except httpx.HTTPError as e:
+                    logger.error(
+                        "FlightAPI roundtrip error for %s→%s: %s", dep_str, ret_str, e,
+                    )
             current += timedelta(days=step)
 
         all_offers.sort(key=lambda o: o.price_eur)

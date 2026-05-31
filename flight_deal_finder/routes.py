@@ -26,11 +26,18 @@ class Route:
     max_stay: int = 14
     enabled: bool = True
     check_interval_h: int = 24
+    is_roundtrip: bool = False
+    return_date_from: str = ""
+    return_date_to: str = ""
     extra: dict[str, Any] = field(default_factory=dict)
 
     @property
     def date_window(self) -> tuple[str, str]:
         return (self.date_from, self.date_to)
+
+    @property
+    def return_date_window(self) -> tuple[str, str]:
+        return (self.return_date_from, self.return_date_to)
 
 
 def validate_route(raw: Any, index: int = 0) -> Route | None:
@@ -90,6 +97,23 @@ def validate_route(raw: Any, index: int = 0) -> Route | None:
         if not isinstance(enabled_val, bool):
             errors.append(f"'enabled' must be a boolean, got {enabled_val!r}")
 
+    # is_roundtrip must be a real bool if present
+    if "is_roundtrip" in raw:
+        rt_val = raw["is_roundtrip"]
+        if not isinstance(rt_val, bool):
+            errors.append(f"'is_roundtrip' must be a boolean, got {rt_val!r}")
+
+    # return_date_window shape (optional — only used when is_roundtrip is True)
+    return_date_window = raw.get("return_date_window")
+    if return_date_window is not None:
+        if not isinstance(return_date_window, list) or len(return_date_window) != 2:
+            errors.append(
+                f"'return_date_window' must be two date strings, "
+                f"got {type(return_date_window).__name__}"
+            )
+        elif not all(isinstance(d, str) for d in return_date_window):
+            errors.append("'return_date_window' must contain string values")
+
     if errors:
         logger.warning(
             "Route #%d skipped — %s (name: %s)",
@@ -101,6 +125,10 @@ def validate_route(raw: Any, index: int = 0) -> Route | None:
 
     # Safe extraction after validation
     date_from, date_to = date_window  # type: ignore[misc]
+    return_date_from = ""
+    return_date_to = ""
+    if return_date_window is not None:
+        return_date_from, return_date_to = return_date_window
     return Route(
         name=raw["name"],  # type: ignore[arg-type]
         origin=raw["origin"],  # type: ignore[arg-type]
@@ -114,8 +142,12 @@ def validate_route(raw: Any, index: int = 0) -> Route | None:
         check_interval_h=int(raw["check_interval_h"])
         if "check_interval_h" in raw
         else 24,
+        is_roundtrip=raw.get("is_roundtrip", False),
+        return_date_from=return_date_from,
+        return_date_to=return_date_to,
         extra={k: v for k, v in raw.items() if k not in {
             "name", "origin", "destination", "max_price", "date_window",
             "min_stay", "max_stay", "enabled", "check_interval_h",
+            "is_roundtrip", "return_date_window",
         }},
     )

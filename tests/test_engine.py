@@ -397,3 +397,116 @@ class TestDealEngineRun:
             engine.channels[1].send.assert_called_once()
             # Alert recorded
             mock_db["record"].assert_called_once()
+
+    # ── Roundtrip engine integration ─────────────────────────────
+
+    def test_roundtrip_route_calls_search_roundtrip_window(
+        self, tmp_watchlist, monkeypatch, mock_db,
+    ):
+        """When route.is_roundtrip is True, engine calls
+        search_roundtrip_window instead of search_window."""
+        monkeypatch.setenv("FLIGHTAPI_API_KEY", "test-key")
+        with (
+            patch("flight_deal_finder.engine.load_config"),
+            patch.object(DealEngine, "__init__", lambda self: None),
+        ):
+            engine = DealEngine.__new__(DealEngine)
+            engine.dry_run = False
+            engine.channels = [MagicMock()]
+            engine.config = {
+                "_secrets": {"flightapi_api_key": "test-key"},
+                "alerts": {"channels": ["console"],
+                           "deal_threshold_pct": 25,
+                           "cooldown_hours": 168},
+                "routes": [{
+                    "name": "AMS->SOF RT",
+                    "origin": "AMS",
+                    "destination": "SOF",
+                    "max_price": 200,
+                    "date_window": ["2026-07-01", "2026-07-03"],
+                    "is_roundtrip": True,
+                    "return_date_window": ["2026-07-10", "2026-07-17"],
+                    "enabled": True,
+                }],
+                "providers": ["flightapi"],
+            }
+            engine.flightapi = MagicMock()
+            engine.flightapi.search_roundtrip_window.return_value = []
+
+            engine.run()
+            engine.flightapi.search_roundtrip_window.assert_called_once()
+            engine.flightapi.search_window.assert_not_called()
+
+    def test_roundtrip_route_no_return_date_window(
+        self, tmp_watchlist, monkeypatch, mock_db,
+    ):
+        """Roundtrip without return_date_window passes empty strings,
+        which search_roundtrip_window treats as None → min_stay/max_stay."""
+        monkeypatch.setenv("FLIGHTAPI_API_KEY", "test-key")
+        with (
+            patch("flight_deal_finder.engine.load_config"),
+            patch.object(DealEngine, "__init__", lambda self: None),
+        ):
+            engine = DealEngine.__new__(DealEngine)
+            engine.dry_run = False
+            engine.channels = [MagicMock()]
+            engine.config = {
+                "_secrets": {"flightapi_api_key": "test-key"},
+                "alerts": {"channels": ["console"],
+                           "deal_threshold_pct": 25,
+                           "cooldown_hours": 168},
+                "routes": [{
+                    "name": "AMS->JFK RT no override",
+                    "origin": "AMS",
+                    "destination": "JFK",
+                    "max_price": 350,
+                    "date_window": ["2026-08-01", "2026-08-01"],
+                    "is_roundtrip": True,
+                    "enabled": True,
+                }],
+                "providers": ["flightapi"],
+            }
+            engine.flightapi = MagicMock()
+            engine.flightapi.search_roundtrip_window.return_value = []
+
+            engine.run()
+            engine.flightapi.search_roundtrip_window.assert_called_once_with(
+                "AMS", "JFK", "2026-08-01", "2026-08-01",
+                7, 14, 350,
+                return_date_from=None,
+                return_date_to=None,
+            )
+
+    def test_roundtrip_disabled_route_skipped(
+        self, tmp_watchlist, monkeypatch, mock_db,
+    ):
+        """Disabled roundtrip route should not call any API."""
+        monkeypatch.setenv("FLIGHTAPI_API_KEY", "test-key")
+        with (
+            patch("flight_deal_finder.engine.load_config"),
+            patch.object(DealEngine, "__init__", lambda self: None),
+        ):
+            engine = DealEngine.__new__(DealEngine)
+            engine.dry_run = False
+            engine.channels = [MagicMock()]
+            engine.config = {
+                "_secrets": {"flightapi_api_key": "test-key"},
+                "alerts": {"channels": ["console"],
+                           "deal_threshold_pct": 25,
+                           "cooldown_hours": 168},
+                "routes": [{
+                    "name": "Disabled RT",
+                    "origin": "AMS",
+                    "destination": "SOF",
+                    "max_price": 200,
+                    "date_window": ["2026-07-01", "2026-07-01"],
+                    "is_roundtrip": True,
+                    "enabled": False,
+                }],
+                "providers": ["flightapi"],
+            }
+            engine.flightapi = MagicMock()
+
+            engine.run()
+            engine.flightapi.search_roundtrip_window.assert_not_called()
+            engine.flightapi.search_window.assert_not_called()

@@ -9,6 +9,7 @@ import pytest
 
 from flight_deal_finder.api.flightapi import (
     ONEWAY_URL,
+    ROUNDTRIP_URL,
     FlightApiClient,
     FlightOffer,
 )
@@ -61,6 +62,26 @@ class TestBuildUrl:
         expected = (
             "https://api.flightapi.io/onewaytrip/test-key-123/"
             "AMS/JFK/2026-08-15/1/0/0/Economy/EUR"
+        )
+        assert url == expected
+
+    def test_build_url_roundtrip_path(self):
+        client = FlightApiClient(api_key="key-abc")
+        url = client._build_url(
+            ROUNDTRIP_URL,
+            origin="LHR",
+            destination="CDG",
+            dep_date="2026-09-01",
+            ret_date="2026-09-15",
+            adults="2",
+            children="0",
+            infants="0",
+            cabin="Economy",
+            currency="EUR",
+        )
+        expected = (
+            "https://api.flightapi.io/roundtrip/key-abc/LHR/CDG/2026-09-01/2026-09-15"
+            "/2/0/0/Economy/EUR"
         )
         assert url == expected
 
@@ -211,6 +232,52 @@ class TestSearchOneway:
             client.search_oneway("AMS", "JFK", "2026-08-15")
 
 
+class TestSearchRoundtrip:
+    def test_search_roundtrip_success(self, mock_httpx_get: MagicMock,
+                                      flightapi_response_oneway: dict):
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = flightapi_response_oneway
+        mock_httpx_get.return_value = mock_response
+
+        client = FlightApiClient(api_key="test-key")
+        offers = client.search_roundtrip("AMS", "JFK", "2026-08-15", "2026-08-30")
+        assert len(offers) == 1
+        mock_httpx_get.assert_called_once()
+
+    @pytest.mark.parametrize("status_code", [403, 429])
+    def test_search_roundtrip_rate_limited_returns_empty(self, mock_httpx_get: MagicMock,
+                                                          status_code: int):
+        mock_response = MagicMock()
+        mock_response.status_code = status_code
+        mock_httpx_get.return_value = mock_response
+
+        client = FlightApiClient(api_key="test-key")
+        offers = client.search_roundtrip("AMS", "JFK", "2026-08-15", "2026-08-30")
+        assert offers == []
+
+    def test_search_roundtrip_404_returns_empty(self, mock_httpx_get: MagicMock):
+        mock_response = MagicMock()
+        mock_response.status_code = 404
+        mock_httpx_get.return_value = mock_response
+
+        client = FlightApiClient(api_key="test-key")
+        offers = client.search_roundtrip("AMS", "JFK", "2026-08-15", "2026-08-30")
+        assert offers == []
+
+    def test_search_roundtrip_500_raises(self, mock_httpx_get: MagicMock):
+        mock_response = MagicMock()
+        mock_response.status_code = 500
+        mock_response.raise_for_status.side_effect = httpx.HTTPStatusError(
+            "server error", request=MagicMock(), response=mock_response,
+        )
+        mock_httpx_get.return_value = mock_response
+
+        client = FlightApiClient(api_key="test-key")
+        with pytest.raises(httpx.HTTPStatusError):
+            client.search_roundtrip("AMS", "JFK", "2026-08-15", "2026-08-30")
+
+
 class TestSearchWindow:
     def test_search_window_wide_range_skips_every_third(self, mock_httpx_get: MagicMock):
         """30-day window → step=3 → 10 calls."""
@@ -270,4 +337,102 @@ class TestSearchWindow:
         offers = client.search_window("AMS", "JFK", "2026-08-15", "2026-08-15",
                                        max_price=500)
         assert len(offers) == 1
+        assert offers[0].price_eur == 300.0
+
+
+class TestSearchRoundtripWindow:
+    """search_roundtrip_window() — date iteration, return-date computation."""
+
+    def test_narrow_window_daily_step(self, mock_httpx_get: MagicMock):
+        """7-day departure window → step=1 → 7 departure dates."""
+        empty_response = MagicMock()
+        empty_response.status_code = 200
+        empty_response.json.return_value = {}
+        mock_httpx_get.return_value = empty_response
+
+        client = FlightApiClient(api_key="test-key")
+        offers = client.search_roundtrip_window(
+            "AMS", "JFK", "2026-08-01", "2026-08-07",
+            min_stay=4, max_stay=6,
+        )
+        assert offers == []
+        # 7 departure dates * ~2 return dates each (4, 7) = 14
+        assert mock_httpx_get.call_count >= 7
+
+    def test_wide_window_skips_every_third(self, mock_httpx_get: MagicMock):
+        """30-day window (>21 days) → step=3 → 10 departure dates."""
+        empty_response = MagicMock()
+        empty_response.status_code = 200
+        empty_response.json.return_value = {}
+        mock_httpx_get.return_value = empty_response
+
+        client = FlightApiClient(api_key="test-key")
+        offers = client.search_roundtrip_window(
+            "AMS", "JFK", "2026-08-01", "2026-08-30",
+            min_stay=1, max_stay=2,
+        )
+        assert offers == []
+        assert mock_httpx_get.call_count >= 10
+
+    def test_max_price_filter_applied(self, mock_httpx_get: MagicMock,
+                                       flightapi_response_oneway: dict):
+        """Offers above max_price are filtered out."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = flightapi_response_oneway
+        mock_httpx_get.return_value = mock_response
+
+        client = FlightApiClient(api_key="test-key")
+        offers = client.search_roundtrip_window(
+            "AMS", "JFK", "2026-08-15", "2026-08-15",
+            min_stay=3, max_stay=5, max_price=200,
+        )
+        # offer is 300 > 200 → filtered out
+        assert offers == []
+
+    def test_handles_httperror_per_call(self, mock_httpx_get: MagicMock):
+        """Individual roundtrip failures should not crash the whole window."""
+        mock_httpx_get.side_effect = httpx.ConnectError("connection failed")
+
+        client = FlightApiClient(api_key="test-key")
+        offers = client.search_roundtrip_window(
+            "AMS", "JFK", "2026-08-01", "2026-08-03",
+            min_stay=1, max_stay=2,
+        )
+        assert offers == []
+
+    def test_overrides_return_date_window(self, mock_httpx_get: MagicMock):
+        """When return_date_from/to are provided, use them instead of
+        min_stay/max_stay computation."""
+        empty_response = MagicMock()
+        empty_response.status_code = 200
+        empty_response.json.return_value = {}
+        mock_httpx_get.return_value = empty_response
+
+        client = FlightApiClient(api_key="test-key")
+        offers = client.search_roundtrip_window(
+            "AMS", "JFK", "2026-08-01", "2026-08-01",
+            min_stay=7, max_stay=14,
+            return_date_from="2026-08-10",
+            return_date_to="2026-08-16",
+        )
+        assert offers == []
+        # Should have called with return dates in the override range
+        assert mock_httpx_get.call_count >= 1
+
+    def test_sorts_offers_by_price(self, mock_httpx_get: MagicMock,
+                                    flightapi_response_oneway: dict):
+        """Offers returned are sorted by price ascending."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = flightapi_response_oneway
+        mock_httpx_get.return_value = mock_response
+
+        client = FlightApiClient(api_key="test-key")
+        offers = client.search_roundtrip_window(
+            "AMS", "JFK", "2026-08-15", "2026-08-15",
+            min_stay=3, max_stay=5, max_price=500,
+        )
+        # Single offer from mock so sort is trivial
+        assert len(offers) >= 1
         assert offers[0].price_eur == 300.0

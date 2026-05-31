@@ -93,10 +93,19 @@ class DealEngine:
 
             logger.info("Checking %s (%s→%s)", route_name, origin, destination)
 
-            # Search across date window
-            offers = self.flightapi.search_window(
-                origin, destination, date_from, date_to, min_stay, max_stay, max_price
-            )
+            # Search across date window — oneway or roundtrip
+            if route.is_roundtrip:
+                offers = self.flightapi.search_roundtrip_window(
+                    origin, destination, date_from, date_to,
+                    min_stay, max_stay, max_price,
+                    return_date_from=route.return_date_from or None,
+                    return_date_to=route.return_date_to or None,
+                )
+            else:
+                offers = self.flightapi.search_window(
+                    origin, destination, date_from, date_to,
+                    min_stay, max_stay, max_price,
+                )
 
             if not offers:
                 logger.info("  No offers found under €%.0f", max_price)
