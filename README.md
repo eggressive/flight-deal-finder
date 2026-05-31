@@ -40,7 +40,10 @@ flight-deals watchlist
 ## Architecture
 
 ```
-watchlist.yaml  ──→  Route Validation  ──→  DealEngine  ──→  FlightAPI.io (oneway search across date window)
+watchlist.yaml  ──→  Route Validation  ──→  DealEngine  ──→  FlightAPI.io
+                              │                  │
+                              │                  ├── oneway search (search_window)
+                              │                  └── roundtrip search (search_roundtrip_window)
                               │
                               ├── price history (SQLite)
                               ├── deal scoring (median-based)
@@ -67,9 +70,11 @@ The watchlist supports these optional fields per route:
 | Option | Default | Description |
 |--------|---------|-------------|
 | `enabled` | `true` | Set `false` to skip checking this route |
+| `is_roundtrip` | `false` | Search roundtrip flights instead of oneway |
 | `direct_only` | `false` | Skip flights with 1+ stops |
 | `min_stay` | `7` | Minimum trip length in days |
 | `max_stay` | `14` | Maximum trip length in days |
+| `return_date_window` | — | Return date range \[YYYY-MM-DD, YYYY-MM-DD\] for roundtrip (defaults to departure + min_stay..max_stay) |
 
 ## Alert Channels
 
