@@ -47,8 +47,8 @@ Last updated: 2026-05-31
 | 2 | Server-side max-price filter (save credits) | `flight_deal_finder/api/flightapi.py` | 2 hrs | Pass price param to FlightAPI.io instead of client-side filtering |
 | 3 | Structured output from `check` command | `flight_deal_finder/cli.py` | 1 hr | Print summary: "Checked 3 routes, 12 offers, 1 deal found" |
 | 4 | HTML email for deal alerts | `flight_deal_finder/alerts/channels.py` | 2 hrs | Better formatting + clickable links in email alerts |
-| 5 | `search_window` actually uses `min_stay`/`max_stay` via roundtrip integration | `flight_deal_finder/api/flightapi.py` | ✅ Done | Roundtrip search added: `search_roundtrip_window` with return-date computation |
-| 6 | Route-level `check_interval_h` support | `flight_deal_finder/engine.py` + scheduler | 4 hrs | Watchlist declares it but engine never reads it |
+| 5 | `search_window` actually uses `min_stay`/`max_stay` via roundtrip integration | `flight_deal_finder/api/flightapi.py` | ✅ Done | Roundtrip search added: `search_roundtrip_window` |
+| 6 | ~~Route-level `check_interval_h` support~~ | — | ✅ Removed | Field was never consumed by engine/CLI; removed in PR #9
 | 7 | CI/CD (GitHub Actions) | `.github/workflows/` | 2 hrs | pytest + ruff on every PR |
 | 8 | `get_median_price` scaling note | `flight_deal_finder/db.py` | 30 min | Client-side median on all rows; fine for now, document scaling concern |
 
@@ -72,7 +72,7 @@ Last updated: 2026-05-31
 
 1. **Roundtrip search:** ✅ Implemented — `search_roundtrip()` re-added to `FlightApiClient`, engine branches on `is_roundtrip`, `return_date_window` optional override.
 2. **`min_stay`/`max_stay`:** ✅ Used by `search_roundtrip_window()` for return-date range computation. Still only informational for oneway `search_window()`.
-3. **`check_interval_h`:** Watchlist declares it but engine never reads it. Remove from schema, or implement per-route scheduling?
+3. **`check_interval_h`:** Removed — field declared and validated but never consumed by engine/CLI. Re-add when per-route scheduling is implemented.
 
 ---
 

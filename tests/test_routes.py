@@ -30,7 +30,6 @@ class TestValidateRoute:
         assert route.min_stay == 7
         assert route.max_stay == 14
         assert route.enabled is True
-        assert route.check_interval_h == 24
         assert route.extra == {}
 
     def test_valid_with_optionals(self) -> None:
@@ -39,7 +38,6 @@ class TestValidateRoute:
             "min_stay": 4,
             "max_stay": 10,
             "enabled": False,
-            "check_interval_h": 12,
             "notes": "direct only",
         }
         route = validate_route(raw)
@@ -47,7 +45,6 @@ class TestValidateRoute:
         assert route.min_stay == 4
         assert route.max_stay == 10
         assert route.enabled is False
-        assert route.check_interval_h == 12
         assert route.extra == {"notes": "direct only"}
 
     # ── Missing fields ──────────────────────────────────────────
@@ -115,10 +112,6 @@ class TestValidateRoute:
 
     def test_max_stay_non_numeric(self) -> None:
         raw = {**self._valid, "max_stay": "ten"}
-        assert validate_route(raw) is None
-
-    def test_check_interval_h_non_numeric(self) -> None:
-        raw = {**self._valid, "check_interval_h": "often"}
         assert validate_route(raw) is None
 
     def test_optional_numeric_combined(self, caplog) -> None:
